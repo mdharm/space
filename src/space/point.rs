@@ -1,5 +1,8 @@
+use rand::Rng;
+
 pub type Float = f64;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Point {
     pub x: Float,
     pub y: Float,
@@ -35,5 +38,12 @@ impl Point {
     }
     pub fn unitVector(self) -> Point {
         return self.scale(self.magnitudeSquared().sqrt());
+    }
+    pub fn new_random() -> Point {
+        let mut rng = rand::thread_rng();
+        return Point {
+            x: rng.gen::<f64>(),
+            y: rng.gen::<f64>(),
+        };
     }
 }

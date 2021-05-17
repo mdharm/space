@@ -1,6 +1,3 @@
-extern crate either;
-use either::*;
-use std::slice::*;
 /*
 
 The force on this mass is the sum of the forces of adjacent masses and the clouds around that.
@@ -18,24 +15,40 @@ use point::{Float, Point};
 
 static ZERO: Point = Point { x: 0.0, y: 0.0 };
 
-pub struct Node {
-    mass: &Mass,
-    tree: Option<Box<(Node, Node)>>,
+struct Leaf<'a> {
+    mass: &'a Mass,
 }
+
+struct Node<'a> {
+    center: Point,
+    mass: Float,
+    left: Box<Tree<'a>>,
+    right: Box<Tree<'a>>,
+}
+
+struct Tree<'a> {
+    node: Option<Box<Node<'a>>>,
+    leaf: Option<Leaf<'a>>,
+}
+
 pub struct Mass {
     pub position: Point,
     pub velocity: Point,
     pub mass: Float,
 }
+
 impl Mass {
     pub fn new_random() -> Mass {
-        let m: Mass;
-        return m;
+        return Mass {
+            position: Point::new_random(),
+            velocity: Point::new_random(),
+            mass: 1.0,
+        };
     }
 }
 pub fn step(masses: Vec<Mass>) {
-    let i = masses.iter();
-    let n = Node::new_leaf(*i.next().unwrap());
+    let mut i = masses.iter();
+    let n = Node::new_leaf(i.next().unwrap());
     for m in i {
         n.add(m);
     }
@@ -43,27 +56,30 @@ pub fn step(masses: Vec<Mass>) {
     return;
 }
 
-impl Node {
-    pub fn new_leaf(m: Mass) -> Node {
-        let n: Node;
-        n.mass = m;
-        n.tree = None;
-        return n;
+impl<'a> Node<'a> {
+    pub fn new_leaf(m: &'a Mass) -> Node<'a> {
+        return Node {
+            mass: m,
+            tree: None,
+        };
     }
-    pub fn new(l: Mass, r: Mass) -> Node {
-        let n: Node;
-        n.tree = Some(Box::new((Node::new_leaf(l), Node::new_leaf(r))));
-        n.mass.mass = l.mass + r.mass;
-        n.mass.position = l
-            .position
-            .scale(l.mass)
-            .add(r.position.scale(r.mass))
-            .scale(1.0 / (l.mass + r.mass));
-        n.mass.velocity = ZERO;
-        return n;
+    pub fn new(l: &'a Mass, r: &'a Mass) -> Node<'a> {
+        let m: &Mass = Mass {
+            position: l
+                .position
+                .scale(l.mass)
+                .add(r.position.scale(r.mass))
+                .scale(1.0 / (l.mass + r.mass)),
+            velocity: ZERO,
+            mass: l.mass + r.mass,
+        };
+        return Node {
+            mass: m,
+            tree: Some(Box::new((Node::new_leaf(l), Node::new_leaf(r)))),
+        };
     }
 
-    pub fn add(&self, mass: &Mass) {
+    pub fn add(&self, mass: &'a Mass) {
         if self.tree.is_none() {
             self.tree = Some(Box::new((Node::new_leaf(mass), Node::new_leaf(self.mass))));
         } else {
