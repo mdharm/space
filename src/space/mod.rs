@@ -12,24 +12,9 @@ To build the tree, we need the center of mass of each cloud.
 */
 pub mod point;
 use point::{Float, Point};
+use Tree::*;
 
 static ZERO: Point = Point { x: 0.0, y: 0.0 };
-
-struct Leaf<'a> {
-    mass: &'a Mass,
-}
-
-struct Node<'a> {
-    center: Point,
-    mass: Float,
-    left: Box<Tree<'a>>,
-    right: Box<Tree<'a>>,
-}
-
-struct Tree<'a> {
-    node: Option<Box<Node<'a>>>,
-    leaf: Option<Leaf<'a>>,
-}
 
 pub struct Mass {
     pub position: Point,
@@ -37,92 +22,99 @@ pub struct Mass {
     pub mass: Float,
 }
 
+struct TreeNode<'a> {
+    center: Point,
+    mass: Float,
+    left: Tree<'a>,
+    right: Tree<'a>,
+}
+
+enum Tree<'a> {
+    Node(Box<TreeNode<'a>>),
+    Leaf(&'a mut Mass),
+}
+
 impl Mass {
     pub fn new_random() -> Mass {
-        return Mass {
+        Mass {
             position: Point::new_random(),
             velocity: Point::new_random(),
             mass: 1.0,
-        };
+        }
     }
-}
-pub fn step(masses: Vec<Mass>) {
-    let mut i = masses.iter();
-    let n = Node::new_leaf(i.next().unwrap());
-    for m in i {
-        n.add(m);
-    }
-    n.updateWith(ZERO);
-    return;
 }
 
-impl<'a> Node<'a> {
-    pub fn new_leaf(m: &'a Mass) -> Node<'a> {
-        return Node {
-            mass: m,
-            tree: None,
-        };
+pub fn step(masses: &mut Vec<Mass>) {
+    let mut i = masses.iter_mut();
+    let tree = Tree::new_leaf(i.next().unwrap());
+    for m in i {
+        tree.add(m);
     }
-    pub fn new(l: &'a Mass, r: &'a Mass) -> Node<'a> {
-        let m: &Mass = Mass {
-            position: l
+    tree.updateWith(ZERO);
+}
+
+impl<'a> Tree<'a> {
+    pub fn new_leaf(m: &'a mut Mass) -> Tree<'a> {
+        Leaf(m)
+    }
+    pub fn new_node(l: &'a mut Mass, r: &'a mut Mass) -> Tree<'a> {
+        Node(Box::new(TreeNode {
+            center: l
                 .position
                 .scale(l.mass)
                 .add(r.position.scale(r.mass))
                 .scale(1.0 / (l.mass + r.mass)),
-            velocity: ZERO,
             mass: l.mass + r.mass,
-        };
-        return Node {
-            mass: m,
-            tree: Some(Box::new((Node::new_leaf(l), Node::new_leaf(r)))),
-        };
+            left: Leaf(l),
+            right: Leaf(r),
+        }))
+    }
+    fn center(&self) -> Point {
+        match self {
+            Leaf(m) => m.position,
+            Node(n) => n.center,
+        }
+    }
+    fn mass(&self) -> Float {
+        match self {
+            Leaf(m) => m.mass,
+            Node(n) => n.mass,
+        }
     }
 
-    pub fn add(&self, mass: &'a Mass) {
-        if self.tree.is_none() {
-            self.tree = Some(Box::new((Node::new_leaf(mass), Node::new_leaf(self.mass))));
-        } else {
-            let (left, right) = *self.tree.unwrap();
-
-            let leftDistance2 = left
-                .mass
-                .position
-                .minus(self.mass.position)
-                .magnitudeSquared();
-            let rightDistance2 = right
-                .mass
-                .position
-                .minus(self.mass.position)
-                .magnitudeSquared();
-            if leftDistance2 < rightDistance2 {
-                left.add(mass);
-            } else {
-                right.add(mass);
+    pub fn add(mut self, mass: &'a mut Mass) -> Self {
+        match self {
+            Leaf(mut m) => Tree::new_node(m, mass),
+            Node(mut n) => {
+                let leftForce = (n.left.mass() + mass.mass)
+                    / n.left.center().minus(mass.position).magnitudeSquared();
+                let rightForce = (n.right.mass() + mass.mass)
+                    / n.right.center().minus(mass.position).magnitudeSquared();
+                // can Boxes be reused?
+                if rightForce > leftForce {
+                    n.right = n.right.add(mass);
+                } else {
+                    n.left = n.left.add(mass);
+                }
+                self
             }
         }
-        let (left, right) = *self.tree.unwrap();
-        mass.mass = left.mass.mass + right.mass.mass;
-        mass.position = left
-            .mass
-            .position
-            .scale(left.mass.mass)
-            .add(right.mass.position.scale(right.mass.mass))
-            .scale(1.0 / mass.mass);
     }
 
     fn updateWith(&self, force: Point) {
-        if self.tree.is_some() {
-            let (left, right) = *self.tree.unwrap();
-            let diff = left.mass.position.minus(right.mass.position);
-            let f = diff
-                .unitVector()
-                .scale((left.mass.mass + right.mass.mass) / diff.magnitudeSquared().sqrt());
-            left.updateWith(force.add(f));
-            right.updateWith(force.add(f.inverse()));
-        } else {
-            self.mass.velocity.add(force.scale(1.0 / self.mass.mass));
-            self.mass.position = self.mass.position.add(self.mass.velocity);
+        match self {
+            Node(i) => {
+                let diff = i.left.center().minus(i.right.center());
+                let f = diff
+                    .unitVector()
+                    .scale((i.left.mass() + i.right.mass()) / diff.magnitudeSquared().sqrt());
+                i.left.updateWith(force.add(f));
+                i.right.updateWith(force.add(f.inverse()));
+            }
+            Leaf(mut mass) => {
+                mass.velocity.add(force.scale(1.0 / mass.mass));
+                mass.position = mass.position.add(mass.velocity);
+            }
         }
     }
 }
