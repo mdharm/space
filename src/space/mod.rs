@@ -48,15 +48,14 @@ impl<'a> Tree<'a> {
             right: right,
         }))
     }
-    pub fn new_node_with_masses(left: &'a mut Mass, right: &'a mut Mass) -> Tree<'a> {
-        Tree::new_node(Leaf(left), Leaf(right))
-    }
+
     fn center(&self) -> Point {
         match self {
             Leaf(m) => m.position,
             Node(n) => n.center,
         }
     }
+
     fn mass(&self) -> Float {
         match self {
             Leaf(m) => m.mass,
@@ -64,19 +63,27 @@ impl<'a> Tree<'a> {
         }
     }
 
-    pub fn add(self, mass: &'a mut Mass) -> Self {
+    pub fn add(self, new_mass: &'a mut Mass) -> Self {
         match self {
-            Leaf(m) => Tree::new_node_with_masses(m, mass),
-            Node(n) => {
-                let left_force = (n.left.mass() + mass.mass)
-                    / n.left.center().minus(mass.position).magnitude_squared();
-                let right_force = (n.right.mass() + mass.mass)
-                    / n.right.center().minus(mass.position).magnitude_squared();
+            Leaf(mass) => Tree::new_node(Leaf(mass), Leaf(new_mass)),
+            Node(node) => {
+                let left_force = (node.left.mass() + new_mass.mass)
+                    / node
+                        .left
+                        .center()
+                        .minus(new_mass.position)
+                        .magnitude_squared();
+                let right_force = (node.right.mass() + new_mass.mass)
+                    / node
+                        .right
+                        .center()
+                        .minus(new_mass.position)
+                        .magnitude_squared();
                 // can Boxes be reused?
                 if right_force > left_force {
-                    Tree::new_node(n.left, n.right.add(mass))
+                    Tree::new_node(node.left, node.right.add(new_mass))
                 } else {
-                    Tree::new_node(n.left.add(mass), n.right)
+                    Tree::new_node(node.left.add(new_mass), node.right)
                 }
             }
         }
@@ -99,14 +106,7 @@ impl<'a> Tree<'a> {
         }
     }
 }
-pub fn step(masses: &mut Vec<Mass>) {
-    let mut i = masses.iter_mut();
-    let mut tree = Leaf(i.next().unwrap());
-    for m in i {
-        tree = tree.add(m);
-    }
-    tree.update_with(ZERO);
-}
+
 impl Mass {
     pub fn new_random() -> Mass {
         Mass {
@@ -116,12 +116,30 @@ impl Mass {
         }
     }
 }
-pub fn main() {
-    let mut v = Vec::new();
-    for _n in 1..100 {
-        v.push(Mass::new_random());
+pub struct Simulator {
+    masses: Vec<Mass>,
+}
+impl Simulator {
+    pub fn new(count: usize) -> Self {
+        let mut simulator = Simulator {
+            masses: Vec::with_capacity(count),
+        };
+        for _i in 1..count {
+            simulator.masses.push(Mass::new_random());
+        }
+        simulator
     }
-    loop {
-        step(&mut v);
+    pub fn run(&mut self) {
+        loop {
+            self.step();
+        }
+    }
+    pub fn step(&mut self) {
+        let mut i = self.masses.iter_mut();
+        let mut tree = Leaf(i.next().unwrap());
+        for m in i {
+            tree = tree.add(m);
+        }
+        tree.update_with(ZERO);
     }
 }

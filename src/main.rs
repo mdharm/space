@@ -10,7 +10,8 @@ mod space;
 use space::Mass;
 
 pub fn main() {
-    space::main();
+    let mut sim = space::Simulator::new(100);
+    sim.run();
 }
 
 pub fn run(masses: Vec<Mass>) -> Result<(), std::boxed::Box<dyn Error>> {
