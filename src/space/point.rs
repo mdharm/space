@@ -33,11 +33,11 @@ impl Point {
             y: -self.y,
         };
     }
-    pub fn magnitudeSquared(self) -> Float {
+    pub fn magnitude_squared(self) -> Float {
         return self.x * self.x + self.y * self.y;
     }
-    pub fn unitVector(self) -> Point {
-        return self.scale(self.magnitudeSquared().sqrt());
+    pub fn unit_vector(self) -> Point {
+        return self.scale(self.magnitude_squared().sqrt());
     }
     pub fn new_random() -> Point {
         let mut rng = rand::thread_rng();

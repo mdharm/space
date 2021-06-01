@@ -7,9 +7,10 @@ use gtk::*;
 use std::error::Error;
 
 mod space;
+use space::Mass;
 
 pub fn main() {
-    //run(vec![Mass::new_random()]);
+    space::main();
 }
 
 pub fn run(masses: Vec<Mass>) -> Result<(), std::boxed::Box<dyn Error>> {
