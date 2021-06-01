@@ -9,10 +9,10 @@ use std::error::Error;
 mod space;
 
 pub fn main() {
-    run();
+    //run(vec![Mass::new_random()]);
 }
 
-pub fn run() -> Result<(), std::boxed::Box<dyn Error>> {
+pub fn run(masses: Vec<Mass>) -> Result<(), std::boxed::Box<dyn Error>> {
     let application =
         Application::new(Some("com.github.gtk-rs.examples.basic"), Default::default())
             .expect("failed to initialize GTK application");
