@@ -4,17 +4,14 @@ extern crate gtk;
 use gio::prelude::*;
 use gtk::prelude::*;
 use gtk::*;
-use std::error::Error;
 
 mod space;
-use space::Mass;
+use space::*;
 
 pub fn main() {
-    let mut sim = space::Simulator::new(100);
+    let mut sim: Simulator = space::Simulator::new(100);
     sim.run();
-}
 
-pub fn run(masses: Vec<Mass>) -> Result<(), std::boxed::Box<dyn Error>> {
     let application =
         Application::new(Some("com.github.gtk-rs.examples.basic"), Default::default())
             .expect("failed to initialize GTK application");
@@ -26,12 +23,13 @@ pub fn run(masses: Vec<Mass>) -> Result<(), std::boxed::Box<dyn Error>> {
 
         let frame = gtk::Frame::new(None);
         let area = DrawingArea::new();
-        area.connect_draw(move |w, c| {
-            println!("w: {} c:{}", w, c);
-            c.rectangle(1.0, 1.0, 100.0, 200.0);
-            c.fill();
-            gtk::Inhibit(false)
-        });
+        // area.connect_draw(move |w, c| {
+        //     println!("w: {} c:{}", w, c);
+        //     c.rectangle(1.0, 1.0, 100.0, 200.0);
+        //     for m in sim.masses {}
+        //     c.fill();
+        //     gtk::Inhibit(false)
+        // });
         frame.add(&area);
         window.add(&frame);
 
@@ -39,5 +37,4 @@ pub fn run(masses: Vec<Mass>) -> Result<(), std::boxed::Box<dyn Error>> {
     });
 
     application.run(&[]);
-    return Ok(());
 }

@@ -16,12 +16,14 @@ use Tree::*;
 
 static ZERO: Point = Point { x: 0.0, y: 0.0 };
 
+#[derive(Debug)]
 pub struct Mass {
     pub position: Point,
     pub velocity: Point,
     pub mass: Float,
 }
 
+#[derive(Debug)]
 struct TreeNode<'a> {
     center: Point,
     mass: Float,
@@ -29,6 +31,7 @@ struct TreeNode<'a> {
     right: Tree<'a>,
 }
 
+#[derive(Debug)]
 enum Tree<'a> {
     Node(Box<TreeNode<'a>>),
     Leaf(&'a mut Mass),
@@ -67,13 +70,13 @@ impl<'a> Tree<'a> {
         match self {
             Leaf(mass) => Tree::new_node(Leaf(mass), Leaf(new_mass)),
             Node(node) => {
-                let left_force = (node.left.mass() + new_mass.mass)
+                let left_force = (node.left.mass() * new_mass.mass)
                     / node
                         .left
                         .center()
                         .minus(new_mass.position)
                         .magnitude_squared();
-                let right_force = (node.right.mass() + new_mass.mass)
+                let right_force = (node.right.mass() * new_mass.mass)
                     / node
                         .right
                         .center()
@@ -89,17 +92,17 @@ impl<'a> Tree<'a> {
         }
     }
 
-    fn update_with(self, force: Point) {
+    fn update_with(&mut self, force: Point) {
         match self {
             Node(i) => {
                 let diff = i.left.center().minus(i.right.center());
                 let f = diff
                     .unit_vector()
-                    .scale((i.left.mass() + i.right.mass()) / diff.magnitude_squared().sqrt());
+                    .scale((i.left.mass() * i.right.mass()) / diff.magnitude_squared().sqrt());
                 i.left.update_with(force.add(f));
                 i.right.update_with(force.add(f.inverse()));
             }
-            Leaf(mut mass) => {
+            Leaf(mass) => {
                 mass.velocity.add(force.scale(1.0 / mass.mass));
                 mass.position = mass.position.add(mass.velocity);
             }
@@ -117,7 +120,7 @@ impl Mass {
     }
 }
 pub struct Simulator {
-    masses: Vec<Mass>,
+    pub masses: Vec<Mass>,
 }
 impl Simulator {
     pub fn new(count: usize) -> Self {
@@ -135,11 +138,29 @@ impl Simulator {
         }
     }
     pub fn step(&mut self) {
-        let mut i = self.masses.iter_mut();
-        let mut tree = Leaf(i.next().unwrap());
-        for m in i {
-            tree = tree.add(m);
+        let mut iter = self.masses.iter_mut();
+        let mut tree = Leaf(iter.next().unwrap());
+        for mass in iter {
+            tree = tree.add(mass);
         }
         tree.update_with(ZERO);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_update_with() {
+        let mut test_mass = Mass {
+            position: ZERO,
+            velocity: Point { x: 1.0, y: 1.0 },
+            mass: 1.0,
+        };
+        let mut test_node = Tree::Leaf(&mut test_mass);
+
+        test_node.update_with(ZERO);
+        println!("test_node is {:?}", test_node);
     }
 }
