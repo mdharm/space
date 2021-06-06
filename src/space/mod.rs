@@ -12,6 +12,7 @@ To build the tree, we need the center of mass of each cloud.
 */
 pub mod point;
 use point::{Float, Point};
+use rand::Rng;
 use Tree::*;
 
 static ZERO: Point = Point { x: 0.0, y: 0.0 };
@@ -32,7 +33,7 @@ struct TreeNode<'a> {
 }
 
 #[derive(Debug)]
-enum Tree<'a> {
+pub enum Tree<'a> {
     Node(Box<TreeNode<'a>>),
     Leaf(&'a mut Mass),
 }
@@ -112,16 +113,20 @@ impl<'a> Tree<'a> {
 
 impl Mass {
     pub fn new_random() -> Mass {
+        let mut rng = rand::thread_rng();
         Mass {
             position: Point::new_random(),
             velocity: Point::new_random(),
-            mass: 1.0,
+            mass: rng.gen::<Float>(),
         }
     }
 }
+
+#[derive(Debug)]
 pub struct Simulator {
     pub masses: Vec<Mass>,
 }
+
 impl Simulator {
     pub fn new(count: usize) -> Self {
         let mut simulator = Simulator {
@@ -138,12 +143,16 @@ impl Simulator {
         }
     }
     pub fn step(&mut self) {
+        let mut tree = self.tree();
+        tree.update_with(ZERO);
+    }
+    pub fn tree<'a>(&'a mut self) -> Tree<'a> {
         let mut iter = self.masses.iter_mut();
         let mut tree = Leaf(iter.next().unwrap());
         for mass in iter {
             tree = tree.add(mass);
         }
-        tree.update_with(ZERO);
+        tree
     }
 }
 

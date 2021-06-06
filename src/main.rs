@@ -9,6 +9,12 @@ mod space;
 use space::*;
 
 pub fn main() {
+    let mut sim: Simulator = space::Simulator::new(10);
+    print!("{:#?}\n", sim);
+    print!("{:#?}\n", sim.tree());
+}
+
+pub fn main_gtk() {
     let mut sim: Simulator = space::Simulator::new(100);
     sim.run();
 
