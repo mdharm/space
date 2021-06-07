@@ -1,20 +1,19 @@
-extern crate gio;
-extern crate gtk;
-
-use gio::prelude::*;
-use gtk::prelude::*;
-use gtk::*;
-
 mod space;
 use space::*;
 
+#[cfg(not(feature = "use_gtk"))]
 pub fn main() {
     let mut sim: Simulator = space::Simulator::new(10);
     print!("{:#?}\n", sim);
     print!("{:#?}\n", sim.tree());
 }
 
-pub fn main_gtk() {
+#[cfg(feature = "use_gtk")]
+pub fn main() {
+    use gio::prelude::*;
+    use gtk::prelude::*;
+    use gtk::*;
+
     let mut sim: Simulator = space::Simulator::new(100);
     sim.run();
 
