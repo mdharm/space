@@ -1,4 +1,3 @@
-mod space;
 use space::*;
 
 #[cfg(not(feature = "use_gtk"))]

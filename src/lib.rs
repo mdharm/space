@@ -25,7 +25,7 @@ pub struct Mass {
 }
 
 #[derive(Debug)]
-struct TreeNode<'a> {
+pub struct TreeNode<'a> {
     center: Point,
     mass: Float,
     left: Tree<'a>,
