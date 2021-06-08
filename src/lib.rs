@@ -11,11 +11,9 @@ To build the tree, we need the center of mass of each cloud.
 
 */
 pub mod point;
-use point::{Float, Point};
+use point::*;
 use rand::Rng;
 use Tree::*;
-
-static ZERO: Point = Point { x: 0.0, y: 0.0 };
 
 #[derive(Debug)]
 pub struct Mass {
@@ -144,7 +142,7 @@ impl Simulator {
     }
     pub fn step(&mut self) {
         let mut tree = self.tree();
-        tree.update_with(ZERO);
+        tree.update_with(Point::ZERO);
     }
     pub fn tree<'a>(&'a mut self) -> Tree<'a> {
         let mut iter = self.masses.iter_mut();
@@ -163,13 +161,13 @@ mod test {
     #[test]
     fn test_update_with() {
         let mut test_mass = Mass {
-            position: ZERO,
-            velocity: Point { x: 1.0, y: 1.0 },
+            position: Point::ZERO,
+            velocity: Point(1.0, 1.0),
             mass: 1.0,
         };
         let mut test_node = Tree::Leaf(&mut test_mass);
 
-        test_node.update_with(ZERO);
+        test_node.update_with(Point::ZERO);
         println!("test_node is {:?}", test_node);
     }
 }
