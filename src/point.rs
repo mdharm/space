@@ -29,6 +29,10 @@ impl Point {
         self.0 * self.0 + self.1 * self.1
     }
 
+    pub fn magnitude(self) -> Float {
+        self.magnitude_squared().sqrt()
+    }
+
     pub fn unit_vector(self) -> Point {
         self.scale(1.0 / self.magnitude_squared().sqrt())
     }
@@ -69,6 +73,11 @@ mod test {
     #[test]
     fn test_magnitude_squared() {
         assert!(Point(3.0, 4.0).magnitude_squared() == 25.0);
+    }
+
+    #[test]
+    fn test_magnitude() {
+        assert!(Point(3.0, 4.0).magnitude() == 5.0);
     }
 
     #[test]
