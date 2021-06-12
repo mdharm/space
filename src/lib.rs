@@ -102,7 +102,7 @@ impl<'a> Tree<'a> {
                 i.right.update_with(force.add(f.inverse()));
             }
             Leaf(mass) => {
-                mass.velocity.add(force.scale(1.0 / mass.mass));
+                mass.velocity = mass.velocity.add(force.scale(1.0 / mass.mass));
                 mass.position = mass.position.add(mass.velocity);
             }
         }
