@@ -168,6 +168,21 @@ mod test {
         let mut test_node = Tree::Leaf(&mut test_mass);
 
         test_node.update_with(Point::ZERO);
-        println!("test_node is {:?}", test_node);
+
+        if let Leaf(ref x) = test_node {
+            assert!(x.position.minus(Point(1.0, 1.0)).magnitude_squared() < Point::EPSILON);
+            assert!(x.position == Point(1.0, 1.0));
+        } else {
+            panic!("Not a Leaf() when that is the only choice!!");
+        }
+
+        test_node.update_with(Point(2.0, 3.0));
+
+        if let Leaf(ref x) = test_node {
+            assert!(x.position.minus(Point(4.0, 5.0)).magnitude_squared() < Point::EPSILON);
+            assert!(x.position == Point(4.0, 5.0));
+        } else {
+            panic!("Not a Leaf() when that is the only choice!!");
+        }
     }
 }
