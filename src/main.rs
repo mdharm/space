@@ -3,8 +3,8 @@ use space::*;
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
     let mut sim: Simulator = space::Simulator::new(10);
-    print!("{:#?}\n", sim);
-    print!("{:#?}\n", sim.tree());
+    print!("{:#?}", sim);
+    print!("{:#?}", sim.tree());
 }
 
 #[cfg(feature = "use_gtk")]
