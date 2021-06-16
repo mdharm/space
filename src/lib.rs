@@ -36,7 +36,7 @@ pub struct TreeNode<'a> {
 #[derive(Debug)]
 pub enum Tree<'a> {
     Node(Box<TreeNode<'a>>),
-    Leaf(RefCell<&'a mut Mass>),
+    Leaf(&'a RefCell<Mass>),
 }
 
 impl<'a> Tree<'a> {
@@ -68,7 +68,7 @@ impl<'a> Tree<'a> {
         }
     }
 
-    fn add_mass(self, mass_ref: RefCell<&'a mut Mass>) -> Self {
+    fn add_mass(self, mass_ref: &'a RefCell<Mass>) -> Self {
         match self {
             Leaf(mass) => Tree::new_node(Leaf(mass), Leaf(mass_ref)),
             Node(node) => {
@@ -120,7 +120,7 @@ impl Mass {
 
 #[derive(Debug)]
 pub struct Simulator {
-    pub masses: Vec<Mass>,
+    pub masses: Vec<RefCell<Mass>>,
 }
 
 impl Simulator {
@@ -129,7 +129,7 @@ impl Simulator {
             masses: Vec::with_capacity(count),
         };
         for _i in 1..count {
-            simulator.masses.push(Mass::new_random());
+            simulator.masses.push(RefCell::new(Mass::new_random()));
         }
         simulator
     }
@@ -142,7 +142,7 @@ impl Simulator {
         self.tree().update_with(ZERO);
     }
     pub fn tree(&mut self) -> Tree {
-        let mut iter = self.masses.iter_mut().map(RefCell::new);
+        let mut iter = self.masses.iter();
         let mut tree = Leaf(iter.next().unwrap());
         for mass in iter {
             tree = tree.add_mass(mass);
@@ -157,12 +157,12 @@ mod test {
 
     #[test]
     fn test_update_with() {
-        let mut test_mass = Mass {
+        let test_mass = RefCell::new(Mass {
             position: ZERO,
             velocity: Point { x: 1.0, y: 1.0 },
             mass: 1.0,
-        };
-        let mut test_node = Tree::Leaf(RefCell::new(&mut test_mass));
+        });
+        let mut test_node = Tree::Leaf(&test_mass);
 
         test_node.update_with(ZERO);
         println!("test_node is {:?}", test_node);
