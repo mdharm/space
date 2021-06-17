@@ -1,4 +1,4 @@
-use space::*;
+use std::sync::*;
 
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
@@ -13,31 +13,46 @@ pub fn main() {
     use gtk::prelude::*;
     use gtk::*;
 
-    let mut sim: Simulator = space::Simulator::new(100);
-    sim.run();
+    let sim = Arc::new(Mutex::new(space::Simulator::new(5)));
+    let sim1 = sim.clone();
+    std::thread::spawn(move || sim1.lock().unwrap().run());
 
     let application =
         Application::new(Some("com.github.gtk-rs.examples.basic"), Default::default())
             .expect("failed to initialize GTK application");
-
     application.connect_activate(move |app| {
         let window = ApplicationWindow::new(app);
         window.set_title("Space Sim");
-        window.set_default_size(400, 400);
+
+        const WIDTH: f64 = 400.0;
+        const HEIGHT: f64 = 400.0;
+        window.set_default_size(WIDTH as i32, HEIGHT as i32);
 
         let frame = gtk::Frame::new(None);
         let area = DrawingArea::new();
-        // area.connect_draw(move |w, c| {
-        //     println!("w: {} c:{}", w, c);
-        //     c.rectangle(1.0, 1.0, 100.0, 200.0);
-        //     for m in sim.masses {}
-        //     c.fill();
-        //     gtk::Inhibit(false)
-        // });
+
+        let sim2 = sim.clone();
+        area.connect_draw(move |w, c| {
+            for m in sim2.lock().unwrap().tree.mass_iter() {
+                //println!("{:?}", m);
+                c.rectangle(
+                    WIDTH / 2.0 + 100.0 * m.position.x,
+                    HEIGHT / 2.0 + 100.0 * m.position.y,
+                    1.0,
+                    1.0,
+                );
+            }
+            c.fill();
+            gtk::Inhibit(false)
+        });
         frame.add(&area);
         window.add(&frame);
-
         window.show_all();
+
+        glib::source::timeout_add_local(50, move || {
+            area.queue_draw();
+            Continue(true)
+        });
     });
 
     application.run(&[]);

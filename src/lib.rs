@@ -13,12 +13,13 @@ To build the tree, we need the center of mass of each cloud.
 pub mod point;
 use point::{Float, Point};
 use rand::Rng;
-use std::cell::RefCell;
+use std::iter::*;
+//use std::sync::*;
 use Tree::*;
 
 static ZERO: Point = Point { x: 0.0, y: 0.0 };
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Mass {
     pub position: Point,
     pub velocity: Point,
@@ -26,53 +27,53 @@ pub struct Mass {
 }
 
 #[derive(Debug)]
-pub struct TreeNode<'a> {
+pub struct TreeNode {
     center: Point,
     mass: Float,
-    left: Tree<'a>,
-    right: Tree<'a>,
+    left: Tree,
+    right: Tree,
 }
 
 #[derive(Debug)]
-pub enum Tree<'a> {
-    Node(Box<TreeNode<'a>>),
-    Leaf(&'a RefCell<Mass>),
+pub enum Tree {
+    Node(Box<TreeNode>),
+    Leaf(Mass),
 }
 
-impl<'a> Tree<'a> {
-    fn new_node(left_tree: Tree<'a>, right_tree: Tree<'a>) -> Tree<'a> {
-        let new_mass = left_tree.mass() + right_tree.mass();
+impl Tree {
+    fn new_node(left: Tree, right: Tree) -> Tree {
+        let new_mass = left.mass() + right.mass();
         Node(Box::new(TreeNode {
-            center: left_tree
+            center: left
                 .center()
-                .scale(left_tree.mass())
-                .add(right_tree.center().scale(right_tree.mass()))
+                .scale(left.mass())
+                .add(right.center().scale(right.mass()))
                 .scale(1.0 / new_mass),
             mass: new_mass,
-            left: left_tree,
-            right: right_tree,
+            left,
+            right,
         }))
     }
 
     fn center(&self) -> Point {
         match self {
-            Leaf(m) => m.borrow().position,
+            Leaf(m) => m.position,
             Node(n) => n.center,
         }
     }
 
     fn mass(&self) -> Float {
         match self {
-            Leaf(m) => m.borrow().mass,
+            Leaf(m) => m.mass,
             Node(n) => n.mass,
         }
     }
 
-    fn add_mass(self, mass_ref: &'a RefCell<Mass>) -> Self {
+    fn add_mass(self, mass_ref: Mass) -> Self {
         match self {
-            Leaf(mass) => Tree::new_node(Leaf(mass), Leaf(mass_ref)),
+            Leaf(lm) => Tree::new_node(Leaf(lm), Leaf(mass_ref)),
             Node(node) => {
-                let center = mass_ref.borrow().position;
+                let center = mass_ref.position;
                 // ignore the effect of node.mass, because it would be same for left and right
                 let left_force =
                     (node.left.mass()) / node.left.center().minus(center).magnitude_squared();
@@ -99,10 +100,47 @@ impl<'a> Tree<'a> {
                 i.right.update_with(force.add(f.inverse()));
             }
             Leaf(mass) => {
-                let mut point_mass = mass.borrow_mut();
+                let mut point_mass = mass;
                 point_mass.velocity = point_mass.velocity.add(force.scale(1.0 / point_mass.mass));
                 point_mass.position = point_mass.position.add(point_mass.velocity);
             }
+        }
+    }
+    pub fn mass_iter(&self) -> TreeIter {
+        TreeIter::new(&self)
+    }
+}
+
+pub struct TreeIter<'a> {
+    stack: Vec<&'a Tree>,
+}
+
+impl<'a> TreeIter<'a> {
+    fn new(tree: &'a Tree) -> TreeIter<'a> {
+        let mut i = TreeIter { stack: Vec::new() };
+        i.load(tree);
+        i
+    }
+    fn load(&mut self, tree: &'a Tree) {
+        self.stack.push(tree);
+        match tree {
+            Leaf(_) => {}
+            Node(n) => {
+                self.load(&n.left);
+            }
+        }
+    }
+}
+impl<'a> Iterator for TreeIter<'a> {
+    type Item = &'a Mass;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.stack.pop() {
+            Some(Node(n)) => {
+                self.load(&n.right);
+                self.next()
+            }
+            Some(Leaf(m)) => Some(m),
+            None => None,
         }
     }
 }
@@ -120,32 +158,41 @@ impl Mass {
 
 #[derive(Debug)]
 pub struct Simulator {
-    pub masses: Vec<RefCell<Mass>>,
+    //    pub tree: Arc<Mutex<Tree>>,
+    pub tree: Tree,
 }
 
 impl Simulator {
     pub fn new(count: usize) -> Self {
-        let mut simulator = Simulator {
-            masses: Vec::with_capacity(count),
-        };
+        let mut tree = Leaf(Mass::new_random());
         for _i in 1..count {
-            simulator.masses.push(RefCell::new(Mass::new_random()));
+            tree = tree.add_mass(Mass::new_random());
         }
-        simulator
+        Simulator {
+            //            tree: Arc::new(Mutex::new(tree)),
+            tree,
+        }
     }
     pub fn run(&mut self) {
         loop {
             self.step();
         }
     }
-    pub fn step(&mut self) {
-        self.tree().update_with(ZERO);
+    fn step(&mut self) {
+        println!("step()");
+        let mut t = self.new_tree();
+        t.update_with(ZERO);
+        //        *self.tree.lock().unwrap() = t;
+        self.tree = t;
+        println!("  {:?}", self.tree);
     }
-    pub fn tree(&mut self) -> Tree {
-        let mut iter = self.masses.iter();
-        let mut tree = Leaf(iter.next().unwrap());
+    fn new_tree(&mut self) -> Tree {
+        // let mutex = self.tree.lock().unwrap();
+        // let mut iter = mutex.mass_iter();
+        let mut iter = self.tree.mass_iter();
+        let mut tree = Leaf(*iter.next().unwrap());
         for mass in iter {
-            tree = tree.add_mass(mass);
+            tree = tree.add_mass(*mass);
         }
         tree
     }
@@ -157,12 +204,12 @@ mod test {
 
     #[test]
     fn test_update_with() {
-        let test_mass = RefCell::new(Mass {
+        let test_mass = Mass {
             position: ZERO,
             velocity: Point { x: 1.0, y: 1.0 },
             mass: 1.0,
-        });
-        let mut test_node = Tree::Leaf(&test_mass);
+        };
+        let mut test_node = Tree::Leaf(test_mass);
 
         test_node.update_with(ZERO);
         println!("test_node is {:?}", test_node);
