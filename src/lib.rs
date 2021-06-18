@@ -40,6 +40,12 @@ pub enum Tree {
 }
 
 impl Tree {
+    pub fn size(&self) -> i32 {
+        match self {
+            Leaf(_) => 1,
+            Node(n) => n.left.size() + n.right.size(),
+        }
+    }
     fn new_node(left: Tree, right: Tree) -> Tree {
         let new_mass = left.mass() + right.mass();
         Node(Box::new(TreeNode {
@@ -80,11 +86,11 @@ impl Tree {
                     (node.right.mass()) / node.right.center().minus(center).magnitude_squared();
                 if left_force.is_nan() {
                     println!("left NaN");
-                    left_force = 0.0
+                    left_force = rand::thread_rng().gen::<Float>();
                 }
                 if right_force.is_nan() {
                     println!("right NaN");
-                    right_force = 0.0
+                    right_force = rand::thread_rng().gen::<Float>();
                 }
                 if right_force > left_force {
                     Tree::new_node(node.left, node.right.add_mass(mass_ref))
@@ -153,11 +159,10 @@ impl<'a> Iterator for TreeIter<'a> {
 
 impl Mass {
     pub fn new_random() -> Mass {
-        let mut rng = rand::thread_rng();
         Mass {
             position: Point::new_random(),
             velocity: Point::new_random(),
-            mass: rng.gen::<Float>(),
+            mass: rand::thread_rng().gen::<Float>()/1000.0,
         }
     }
 }
@@ -177,22 +182,16 @@ impl Simulator {
     }
     pub fn run(&mut self) {
         loop {
-            self.tree = self.step();
+            self.tree = self.new_tree();
         }
     }
-    pub fn step(&self) -> Tree {
-        //println!("step() {:#?}", std::time::SystemTime::now());
-        let mut t = self.new_tree();
-        t.update_with(ZERO);
-        //        self.tree = t;
-        t
-    }
-    fn new_tree(&self) -> Tree {
+    pub fn new_tree(&self) -> Tree {
         let mut iter = self.tree.mass_iter();
         let mut tree = Leaf(*iter.next().unwrap());
         for mass in iter {
             tree = tree.add_mass(*mass);
         }
+        tree.update_with(ZERO);
         tree
     }
 }

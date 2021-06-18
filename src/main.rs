@@ -1,11 +1,10 @@
 use space::*;
-use std::sync::*;
 
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
-    let mut sim: Simulator = Simulator::new(10);
+    let sim: Simulator = Simulator::new(10);
     print!("{:#?}", sim);
-    print!("{:#?}", sim.tree());
+    print!("{:#?}", sim.tree);
 }
 
 #[cfg(feature = "use_gtk")]
@@ -13,13 +12,14 @@ pub fn main() {
     use gio::prelude::*;
     use gtk::prelude::*;
     use gtk::*;
+    use std::cell::*;
+    use std::sync::*;
 
-    let sim = Arc::new(RwLock::new(Simulator::new(500)));
+    let sim = Arc::new(RwLock::new(Simulator::new(5000)));
     let sim1 = sim.clone();
     std::thread::spawn(move || loop {
-        let s = sim1.read().unwrap().step();
-        sim1.write().unwrap().tree = s;
-        //std::thread::sleep_ms(200);
+        let new_tree = sim1.read().unwrap().new_tree();
+        sim1.write().unwrap().tree = new_tree;
     });
 
     let application =
@@ -37,19 +37,22 @@ pub fn main() {
         let area = DrawingArea::new();
 
         let sim2 = sim.clone();
-        area.connect_draw(move |_w, cairo| {
-            println!("draw");
+        let max_max: RefCell<f64> = RefCell::new(0.0);
+        area.connect_draw(move |window, cairo| {
+            let width = window.get_allocated_width() as f64;
+            let height = window.get_allocated_height() as f64;
             let s = sim2.read().unwrap();
             let i: Vec<&Mass> = s.tree.mass_iter().collect();
+            let mut max = *max_max.borrow_mut();
             for m in i.iter() {
-                let x = WIDTH / 2.0 + 100.0 * m.position.x;
-                let y = HEIGHT / 2.0 + 100.0 * m.position.y;
-                println!(
-                    "draw ({}, {}) -> ({}, {})",
-                    m.position.x, m.position.y, x, y
-                );
-                cairo.rectangle(x, y, 1.0, 1.0);
+                max = max.max(m.position.x.abs()).max(m.position.y.abs());
+                let x = (m.position.x / max + 0.5) * width;
+                let y = (m.position.y / max + 0.5) * height;
+                let size = m.mass * 10000.0;
+                cairo.rectangle(x, y, size, size);
             }
+            max_max.replace(max);
+            println!("draw max: {}", max);
             cairo.fill();
             gtk::Inhibit(false)
         });
