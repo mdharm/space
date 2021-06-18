@@ -1,8 +1,9 @@
+use space::*;
 use std::sync::*;
 
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
-    let mut sim: Simulator = space::Simulator::new(10);
+    let mut sim: Simulator = Simulator::new(10);
     print!("{:#?}", sim);
     print!("{:#?}", sim.tree());
 }
@@ -13,7 +14,7 @@ pub fn main() {
     use gtk::prelude::*;
     use gtk::*;
 
-    let sim = Arc::new(RwLock::new(space::Simulator::new(500)));
+    let sim = Arc::new(RwLock::new(Simulator::new(500)));
     let sim1 = sim.clone();
     std::thread::spawn(move || loop {
         let s = sim1.read().unwrap().step();
@@ -39,7 +40,7 @@ pub fn main() {
         area.connect_draw(move |_w, cairo| {
             println!("draw");
             let s = sim2.read().unwrap();
-            let i: Vec<&space::Mass> = s.tree.mass_iter().collect();
+            let i: Vec<&Mass> = s.tree.mass_iter().collect();
             for m in i.iter() {
                 let x = WIDTH / 2.0 + 100.0 * m.position.x;
                 let y = HEIGHT / 2.0 + 100.0 * m.position.y;

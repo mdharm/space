@@ -7,39 +7,23 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'space'",
+            "name": "Debug space",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=space",
-                    "--package=space"
+                    "--features",
+                    "use_gtk"
                 ],
                 "filter": {
                     "name": "space",
                     "kind": "bin"
                 }
             },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'space'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=space",
-                    "--package=space"
-                ],
-                "filter": {
-                    "name": "space",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "args": [
+                "--features",
+                "use_gtk"
+            ],
+            "cwd": "${workspaceFolder}",
         }
     ]
 }
