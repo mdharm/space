@@ -13,9 +13,13 @@ pub fn main() {
     use gtk::prelude::*;
     use gtk::*;
 
-    let sim = Arc::new(Mutex::new(space::Simulator::new(5)));
+    let sim = Arc::new(RwLock::new(space::Simulator::new(500)));
     let sim1 = sim.clone();
-    std::thread::spawn(move || sim1.lock().unwrap().run());
+    std::thread::spawn(move || loop {
+        let s = sim1.read().unwrap().step();
+        sim1.write().unwrap().tree = s;
+        //std::thread::sleep_ms(200);
+    });
 
     let application =
         Application::new(Some("com.github.gtk-rs.examples.basic"), Default::default())
@@ -32,17 +36,20 @@ pub fn main() {
         let area = DrawingArea::new();
 
         let sim2 = sim.clone();
-        area.connect_draw(move |w, c| {
-            for m in sim2.lock().unwrap().tree.mass_iter() {
-                //println!("{:?}", m);
-                c.rectangle(
-                    WIDTH / 2.0 + 100.0 * m.position.x,
-                    HEIGHT / 2.0 + 100.0 * m.position.y,
-                    1.0,
-                    1.0,
+        area.connect_draw(move |_w, cairo| {
+            println!("draw");
+            let s = sim2.read().unwrap();
+            let i: Vec<&space::Mass> = s.tree.mass_iter().collect();
+            for m in i.iter() {
+                let x = WIDTH / 2.0 + 100.0 * m.position.x;
+                let y = HEIGHT / 2.0 + 100.0 * m.position.y;
+                println!(
+                    "draw ({}, {}) -> ({}, {})",
+                    m.position.x, m.position.y, x, y
                 );
+                cairo.rectangle(x, y, 1.0, 1.0);
             }
-            c.fill();
+            cairo.fill();
             gtk::Inhibit(false)
         });
         frame.add(&area);

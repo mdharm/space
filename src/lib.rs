@@ -14,7 +14,6 @@ pub mod point;
 use point::{Float, Point};
 use rand::Rng;
 use std::iter::*;
-//use std::sync::*;
 use Tree::*;
 
 static ZERO: Point = Point { x: 0.0, y: 0.0 };
@@ -75,11 +74,18 @@ impl Tree {
             Node(node) => {
                 let center = mass_ref.position;
                 // ignore the effect of node.mass, because it would be same for left and right
-                let left_force =
+                let mut left_force =
                     (node.left.mass()) / node.left.center().minus(center).magnitude_squared();
-                let right_force =
+                let mut right_force =
                     (node.right.mass()) / node.right.center().minus(center).magnitude_squared();
-
+                if left_force.is_nan() {
+                    println!("left NaN");
+                    left_force = 0.0
+                }
+                if right_force.is_nan() {
+                    println!("right NaN");
+                    right_force = 0.0
+                }
                 if right_force > left_force {
                     Tree::new_node(node.left, node.right.add_mass(mass_ref))
                 } else {
@@ -158,7 +164,6 @@ impl Mass {
 
 #[derive(Debug)]
 pub struct Simulator {
-    //    pub tree: Arc<Mutex<Tree>>,
     pub tree: Tree,
 }
 
@@ -168,27 +173,21 @@ impl Simulator {
         for _i in 1..count {
             tree = tree.add_mass(Mass::new_random());
         }
-        Simulator {
-            //            tree: Arc::new(Mutex::new(tree)),
-            tree,
-        }
+        Simulator { tree }
     }
     pub fn run(&mut self) {
         loop {
-            self.step();
+            self.tree = self.step();
         }
     }
-    fn step(&mut self) {
-        println!("step()");
+    pub fn step(&self) -> Tree {
+        //println!("step() {:#?}", std::time::SystemTime::now());
         let mut t = self.new_tree();
         t.update_with(ZERO);
-        //        *self.tree.lock().unwrap() = t;
-        self.tree = t;
-        println!("  {:?}", self.tree);
+        //        self.tree = t;
+        t
     }
-    fn new_tree(&mut self) -> Tree {
-        // let mutex = self.tree.lock().unwrap();
-        // let mut iter = mutex.mass_iter();
+    fn new_tree(&self) -> Tree {
         let mut iter = self.tree.mass_iter();
         let mut tree = Leaf(*iter.next().unwrap());
         for mass in iter {
