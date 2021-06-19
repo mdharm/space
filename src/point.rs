@@ -100,7 +100,7 @@ mod test {
 
     macro_rules! assert_def {
         ($x:expr, $y:expr) => {
-            assert_delta!($x, $y, 0.001)
+            assert_delta!($x, $y, Point::EPSILON)
         };
     }
 
