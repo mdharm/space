@@ -89,4 +89,40 @@ mod test {
     fn test_random() {
         assert!(Point::new_random() != Point::new_random());
     }
+
+    macro_rules! assert_delta {
+        ($x:expr, $y:expr, $d:expr) => {
+            if !($x - $y < $d || $y - $x < $d) {
+                panic!();
+            }
+        };
+    }
+
+    macro_rules! assert_def {
+        ($x:expr, $y:expr) => {
+            assert_delta!($x, $y, 0.001)
+        };
+    }
+
+    #[test]
+    fn test_add2() {
+        let one = Point(1.0, 1.0);
+        let zero = Point(0.0, 0.0);
+        assert_eq!(one, one.add(zero));
+        assert_eq!(one, one.add(one).minus(one));
+    }
+
+    #[test]
+    fn test_magnitude2() {
+        let one = Point(1.0, 1.0);
+        assert_def!(2.0, one.magnitude_squared());
+        assert_def!(2.0, one.magnitude() * one.magnitude());
+    }
+
+    #[test]
+    fn test_unit_vector2() {
+        let one = Point(2.0, 2.0);
+        assert_def!((8.0 as f64).sqrt(), one.unit_vector().magnitude());
+        assert_def!(one.unit_vector().0, one.unit_vector().1)
+    }
 }

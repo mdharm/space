@@ -13,9 +13,10 @@ To build the tree, we need the center of mass of each cloud.
 pub mod point;
 use point::*;
 use rand::Rng;
+use std::iter::*;
 use Tree::*;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Mass {
     pub position: Point,
     pub velocity: Point,
@@ -23,21 +24,27 @@ pub struct Mass {
 }
 
 #[derive(Debug)]
-pub struct TreeNode<'a> {
+pub struct TreeNode {
     center: Point,
     mass: Float,
-    left: Tree<'a>,
-    right: Tree<'a>,
+    left: Tree,
+    right: Tree,
 }
 
 #[derive(Debug)]
-pub enum Tree<'a> {
-    Node(Box<TreeNode<'a>>),
-    Leaf(&'a mut Mass),
+pub enum Tree {
+    Node(Box<TreeNode>),
+    Leaf(Mass),
 }
 
-impl<'a> Tree<'a> {
-    pub fn new_node(left: Tree<'a>, right: Tree<'a>) -> Tree<'a> {
+impl Tree {
+    pub fn size(&self) -> i32 {
+        match self {
+            Leaf(_) => 1,
+            Node(n) => n.left.size() + n.right.size(),
+        }
+    }
+    fn new_node(left: Tree, right: Tree) -> Tree {
         let new_mass = left.mass() + right.mass();
         Node(Box::new(TreeNode {
             center: left
@@ -46,8 +53,8 @@ impl<'a> Tree<'a> {
                 .add(right.center().scale(right.mass()))
                 .scale(1.0 / new_mass),
             mass: new_mass,
-            left: left,
-            right: right,
+            left,
+            right,
         }))
     }
 
@@ -65,27 +72,28 @@ impl<'a> Tree<'a> {
         }
     }
 
-    pub fn add(self, new_mass: &'a mut Mass) -> Self {
+    fn add_mass(self, mass_ref: Mass) -> Self {
         match self {
-            Leaf(mass) => Tree::new_node(Leaf(mass), Leaf(new_mass)),
+            Leaf(lm) => Tree::new_node(Leaf(lm), Leaf(mass_ref)),
             Node(node) => {
-                let left_force = (node.left.mass() * new_mass.mass)
-                    / node
-                        .left
-                        .center()
-                        .minus(new_mass.position)
-                        .magnitude_squared();
-                let right_force = (node.right.mass() * new_mass.mass)
-                    / node
-                        .right
-                        .center()
-                        .minus(new_mass.position)
-                        .magnitude_squared();
-                // can Boxes be reused?
+                let center = mass_ref.position;
+                // ignore the effect of node.mass, because it would be same for left and right
+                let mut left_force =
+                    (node.left.mass()) / node.left.center().minus(center).magnitude_squared();
+                let mut right_force =
+                    (node.right.mass()) / node.right.center().minus(center).magnitude_squared();
+                if left_force.is_nan() {
+                    println!("left NaN");
+                    left_force = rand::thread_rng().gen::<Float>();
+                }
+                if right_force.is_nan() {
+                    println!("right NaN");
+                    right_force = rand::thread_rng().gen::<Float>();
+                }
                 if right_force > left_force {
-                    Tree::new_node(node.left, node.right.add(new_mass))
+                    Tree::new_node(node.left, node.right.add_mass(mass_ref))
                 } else {
-                    Tree::new_node(node.left.add(new_mass), node.right)
+                    Tree::new_node(node.left.add_mass(mass_ref), node.right)
                 }
             }
         }
@@ -102,54 +110,86 @@ impl<'a> Tree<'a> {
                 i.right.update_with(force.add(f.inverse()));
             }
             Leaf(mass) => {
-                mass.velocity = mass.velocity.add(force.scale(1.0 / mass.mass));
-                mass.position = mass.position.add(mass.velocity);
+                let mut point_mass = mass;
+                point_mass.velocity = point_mass.velocity.add(force.scale(1.0 / point_mass.mass));
+                point_mass.position = point_mass.position.add(point_mass.velocity);
             }
+        }
+    }
+    pub fn mass_iter(&self) -> TreeIter {
+        TreeIter::new(&self)
+    }
+}
+
+pub struct TreeIter<'a> {
+    stack: Vec<&'a Tree>,
+}
+
+impl<'a> TreeIter<'a> {
+    fn new(tree: &'a Tree) -> TreeIter<'a> {
+        let mut i = TreeIter { stack: Vec::new() };
+        i.load(tree);
+        i
+    }
+    fn load(&mut self, tree: &'a Tree) {
+        self.stack.push(tree);
+        match tree {
+            Leaf(_) => {}
+            Node(n) => {
+                self.load(&n.left);
+            }
+        }
+    }
+}
+impl<'a> Iterator for TreeIter<'a> {
+    type Item = &'a Mass;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.stack.pop() {
+            Some(Node(n)) => {
+                self.load(&n.right);
+                self.next()
+            }
+            Some(Leaf(m)) => Some(m),
+            None => None,
         }
     }
 }
 
 impl Mass {
     pub fn new_random() -> Mass {
-        let mut rng = rand::thread_rng();
         Mass {
             position: Point::new_random(),
             velocity: Point::new_random(),
-            mass: rng.gen::<Float>(),
+            mass: rand::thread_rng().gen::<Float>() / 1000.0,
         }
     }
 }
 
 #[derive(Debug)]
 pub struct Simulator {
-    pub masses: Vec<Mass>,
+    pub tree: Tree,
 }
 
 impl Simulator {
     pub fn new(count: usize) -> Self {
-        let mut simulator = Simulator {
-            masses: Vec::with_capacity(count),
-        };
+        let mut tree = Leaf(Mass::new_random());
         for _i in 1..count {
-            simulator.masses.push(Mass::new_random());
+            tree = tree.add_mass(Mass::new_random());
         }
-        simulator
+        Simulator { tree }
     }
     pub fn run(&mut self) {
         loop {
-            self.step();
+            self.tree = self.new_tree();
         }
     }
-    pub fn step(&mut self) {
-        let mut tree = self.tree();
-        tree.update_with(Point::ZERO);
-    }
-    pub fn tree<'a>(&'a mut self) -> Tree<'a> {
-        let mut iter = self.masses.iter_mut();
-        let mut tree = Leaf(iter.next().unwrap());
+    pub fn new_tree(&self) -> Tree {
+        let mut iter = self.tree.mass_iter();
+        let mut tree = Leaf(*iter.next().unwrap());
         for mass in iter {
-            tree = tree.add(mass);
+            tree = tree.add_mass(*mass);
         }
+        tree.update_with(Point::ZERO);
         tree
     }
 }
@@ -160,12 +200,12 @@ mod test {
 
     #[test]
     fn test_update_with() {
-        let mut test_mass = Mass {
+        let test_mass = Mass {
             position: Point::ZERO,
             velocity: Point(1.0, 1.0),
             mass: 1.0,
         };
-        let mut test_node = Tree::Leaf(&mut test_mass);
+        let mut test_node = Tree::Leaf(test_mass);
 
         test_node.update_with(Point::ZERO);
 
