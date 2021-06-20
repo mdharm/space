@@ -39,7 +39,7 @@ impl Point {
 
     pub fn new_random() -> Point {
         let mut rng = rand::thread_rng();
-        Point(rng.gen::<f64>(), rng.gen::<f64>())
+        Point(rng.gen::<f64>() - 0.5, rng.gen::<f64>() - 0.5)
     }
 }
 
