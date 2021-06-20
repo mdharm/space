@@ -45,9 +45,9 @@ pub fn main() {
             let i: Vec<&Mass> = s.tree.mass_iter().collect();
             let mut max = *max_max.borrow_mut();
             for m in i.iter() {
-                max = max.max(m.position.x.abs()).max(m.position.y.abs());
-                let x = (m.position.x / max + 0.5) * width;
-                let y = (m.position.y / max + 0.5) * height;
+                max = max.max(m.position.0.abs()).max(m.position.1.abs());
+                let x = (m.position.0 / max + 0.5) * width;
+                let y = (m.position.1 / max + 0.5) * height;
                 let size = m.mass * 10000.0;
                 cairo.rectangle(x, y, size, size);
             }
