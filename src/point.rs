@@ -34,7 +34,7 @@ impl Point {
     }
 
     pub fn unit_vector(self) -> Point {
-        self.scale(1.0 / self.magnitude_squared().sqrt())
+        self.scale(1.0 / self.magnitude())
     }
 
     pub fn new_random() -> Point {
@@ -82,7 +82,7 @@ mod test {
 
     #[test]
     fn test_unit_vector() {
-        assert!((Point::new_random().unit_vector().magnitude_squared() - 1.0) < Point::EPSILON);
+        assert!((Point::new_random().unit_vector().magnitude() - 1.0) < Point::EPSILON);
     }
 
     #[test]
@@ -92,7 +92,7 @@ mod test {
 
     macro_rules! assert_delta {
         ($x:expr, $y:expr, $d:expr) => {
-            if !($x - $y < $d || $y - $x < $d) {
+            if !(($x - $y).abs() < $d) {
                 panic!();
             }
         };
@@ -122,7 +122,7 @@ mod test {
     #[test]
     fn test_unit_vector2() {
         let one = Point(2.0, 2.0);
-        assert_def!((8.0 as f64).sqrt(), one.unit_vector().magnitude());
+        assert_def!(1.0, one.unit_vector().magnitude());
         assert_def!(one.unit_vector().0, one.unit_vector().1)
     }
 }
