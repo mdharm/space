@@ -178,11 +178,11 @@ impl Simulator {
         }
         Simulator { tree }
     }
-    pub fn run(&mut self) {
-        loop {
-            self.tree = self.new_tree();
-        }
+
+    pub fn step(&mut self) {
+        self.tree = self.new_tree();
     }
+
     pub fn new_tree(&self) -> Tree {
         let mut iter = self.tree.mass_iter();
         let mut tree = Leaf(*iter.next().unwrap());

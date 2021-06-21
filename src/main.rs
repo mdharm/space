@@ -17,9 +17,12 @@ pub fn main() {
 
     let sim = Arc::new(RwLock::new(Simulator::new(5000)));
     let sim1 = sim.clone();
-    std::thread::spawn(move || loop {
-        let new_tree = sim1.read().unwrap().new_tree();
-        sim1.write().unwrap().tree = new_tree;
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+        loop {
+            sim1.write().unwrap().step();
+            //std::thread::sleep(std::time::Duration::from_millis(100));
+        }
     });
 
     let application =
