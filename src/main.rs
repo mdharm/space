@@ -20,8 +20,10 @@ pub fn main() {
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(1000));
         loop {
-            sim1.write().unwrap().step();
-            //std::thread::sleep(std::time::Duration::from_millis(100));
+            if let Ok(ref mut s) = sim1.write() {
+                s.step();
+            }
+            //std::thread::sleep(std::time::Duration::from_millis(10));
         }
     });
 
@@ -44,18 +46,19 @@ pub fn main() {
         area.connect_draw(move |window, cairo| {
             let width = window.get_allocated_width() as f64;
             let height = window.get_allocated_height() as f64;
-            let s = sim2.read().unwrap();
-            let i: Vec<&Mass> = s.tree.mass_iter().collect();
-            let mut max = *max_max.borrow_mut();
-            for m in i.iter() {
-                max = max.max(m.position.0.abs()).max(m.position.1.abs());
-                let x = (m.position.0 * width / max / 2.0) + (width / 2.0);
-                let y = (m.position.1 * height / max / 2.0) + (height / 2.0);
-                let size = m.mass * 10000.0;
-                cairo.rectangle(x, y, size, size);
+            if let Ok(s) = sim2.read() {
+                let i: Vec<&Mass> = s.tree.mass_iter().collect();
+                let mut max = *max_max.borrow_mut();
+                for m in i.iter() {
+                    max = max.max(m.position.0.abs()).max(m.position.1.abs());
+                    let x = (m.position.0 * width / max / 2.0) + (width / 2.0);
+                    let y = (m.position.1 * height / max / 2.0) + (height / 2.0);
+                    let size = m.mass * 10000.0;
+                    cairo.rectangle(x, y, size, size);
+                }
+                max_max.replace(max);
+                println!("draw max: {}", max);
             }
-            max_max.replace(max);
-            println!("draw max: {}", max);
             cairo.fill();
             gtk::Inhibit(false)
         });
