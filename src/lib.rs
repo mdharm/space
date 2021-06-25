@@ -210,7 +210,7 @@ impl Simulator for JoeSimulator {
         self.tree = self.new_tree();
     }
 
-    fn mass_iter(&self) -> Box<dyn Iterator<Item = &Mass> + '_> {
+    fn mass_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Mass> + 'a> {
         Box::new(TreeIter::new(&self.tree))
     }
 }
