@@ -1,3 +1,4 @@
+use space::joe::*;
 use space::*;
 
 #[cfg(not(feature = "use_gtk"))]
