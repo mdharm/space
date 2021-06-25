@@ -131,7 +131,7 @@ impl Tree {
     }
 }
 
-pub struct TreeIter<'a> {
+struct TreeIter<'a> {
     stack: Vec<&'a Tree>,
 }
 
@@ -166,24 +166,34 @@ impl<'a> Iterator for TreeIter<'a> {
     }
 }
 
-#[derive(Debug)]
-pub struct Simulator {
-    tree: Tree,
+pub trait SimFactory {
+    fn new(&self, count: usize) -> Box<dyn Simulator>;
 }
 
-impl Simulator {
-    pub fn new(count: usize) -> Self {
+pub trait Simulator: std::fmt::Debug + Send + Sync {
+    fn step(&mut self);
+    fn mass_iter(&self) -> Box<dyn Iterator<Item = &Mass> + '_>;
+}
+
+#[derive(Debug)]
+pub struct JoeFactory;
+
+impl SimFactory for JoeFactory {
+    fn new(&self, count: usize) -> Box<dyn Simulator> {
         let mut tree = Leaf(Mass::new_random());
         for _i in 1..count {
             tree = tree.add_mass(Mass::new_random());
         }
-        Simulator { tree }
+        Box::new(JoeSimulator { tree })
     }
+}
 
-    pub fn step(&mut self) {
-        self.tree = self.new_tree();
-    }
+#[derive(Debug)]
+struct JoeSimulator {
+    tree: Tree,
+}
 
+impl JoeSimulator {
     fn new_tree(&self) -> Tree {
         let mut iter = self.mass_iter();
         let mut tree = Leaf(*iter.next().unwrap());
@@ -193,9 +203,15 @@ impl Simulator {
         tree.update_with(Point::ZERO);
         tree
     }
+}
 
-    pub fn mass_iter(&self) -> TreeIter {
-        TreeIter::new(&self.tree)
+impl Simulator for JoeSimulator {
+    fn step(&mut self) {
+        self.tree = self.new_tree();
+    }
+
+    fn mass_iter(&self) -> Box<dyn Iterator<Item = &Mass> + '_> {
+        Box::new(TreeIter::new(&self.tree))
     }
 }
 

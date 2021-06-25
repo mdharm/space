@@ -2,9 +2,9 @@ use space::*;
 
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
-    let sim: Simulator = Simulator::new(10);
+    let factory: Box<dyn SimFactory> = Box::new(JoeFactory {});
+    let sim: Box<dyn Simulator> = factory.new(10);
     print!("{:#?}", sim);
-    //    print!("{:#?}", sim.tree);
 }
 
 #[cfg(feature = "use_gtk")]
@@ -15,7 +15,8 @@ pub fn main() {
     use std::cell::*;
     use std::sync::*;
 
-    let sim = Arc::new(RwLock::new(Simulator::new(5000)));
+    let factory: std::boxed::Box<dyn SimFactory> = std::boxed::Box::new(JoeFactory {});
+    let sim = Arc::new(RwLock::new(factory.new(5000)));
     let sim1 = sim.clone();
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(1000));
