@@ -4,7 +4,7 @@ use space::*;
 pub fn main() {
     let sim: Simulator = Simulator::new(10);
     print!("{:#?}", sim);
-    print!("{:#?}", sim.tree);
+    //    print!("{:#?}", sim.tree);
 }
 
 #[cfg(feature = "use_gtk")]
@@ -23,7 +23,7 @@ pub fn main() {
             if let Ok(ref mut s) = sim1.write() {
                 s.step();
             }
-            //std::thread::sleep(std::time::Duration::from_millis(10));
+            std::thread::sleep(std::time::Duration::from_millis(100));
         }
     });
 
@@ -47,7 +47,7 @@ pub fn main() {
             let width = window.get_allocated_width() as f64;
             let height = window.get_allocated_height() as f64;
             if let Ok(s) = sim2.read() {
-                let i: Vec<&Mass> = s.tree.mass_iter().collect();
+                let i: Vec<&Mass> = s.mass_iter().collect();
                 let mut max = *max_max.borrow_mut();
                 for m in i.iter() {
                     max = max.max(m.position.0.abs()).max(m.position.1.abs());

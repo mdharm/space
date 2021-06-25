@@ -23,8 +23,18 @@ pub struct Mass {
     pub mass: Float,
 }
 
+impl Mass {
+    pub fn new_random() -> Mass {
+        Mass {
+            position: Point::new_random(),
+            velocity: Point::new_random(),
+            mass: rand::thread_rng().gen::<Float>() / 1000.0,
+        }
+    }
+}
+
 #[derive(Debug)]
-pub struct TreeNode {
+struct TreeNode {
     center: Point,
     mass: Float,
     left: Tree,
@@ -32,18 +42,21 @@ pub struct TreeNode {
 }
 
 #[derive(Debug)]
-pub enum Tree {
+enum Tree {
     Node(Box<TreeNode>),
     Leaf(Mass),
 }
 
 impl Tree {
-    pub fn size(&self) -> i32 {
+    /*
+    fn size(&self) -> i32 {
         match self {
             Leaf(_) => 1,
             Node(n) => n.left.size() + n.right.size(),
         }
     }
+    */
+
     fn new_node(left: Tree, right: Tree) -> Tree {
         let new_mass = left.mass() + right.mass();
         Node(Box::new(TreeNode {
@@ -116,9 +129,6 @@ impl Tree {
             }
         }
     }
-    pub fn mass_iter(&self) -> TreeIter {
-        TreeIter::new(&self)
-    }
 }
 
 pub struct TreeIter<'a> {
@@ -141,6 +151,7 @@ impl<'a> TreeIter<'a> {
         }
     }
 }
+
 impl<'a> Iterator for TreeIter<'a> {
     type Item = &'a Mass;
     fn next(&mut self) -> Option<Self::Item> {
@@ -155,19 +166,9 @@ impl<'a> Iterator for TreeIter<'a> {
     }
 }
 
-impl Mass {
-    pub fn new_random() -> Mass {
-        Mass {
-            position: Point::new_random(),
-            velocity: Point::new_random(),
-            mass: rand::thread_rng().gen::<Float>() / 1000.0,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct Simulator {
-    pub tree: Tree,
+    tree: Tree,
 }
 
 impl Simulator {
@@ -183,14 +184,18 @@ impl Simulator {
         self.tree = self.new_tree();
     }
 
-    pub fn new_tree(&self) -> Tree {
-        let mut iter = self.tree.mass_iter();
+    fn new_tree(&self) -> Tree {
+        let mut iter = self.mass_iter();
         let mut tree = Leaf(*iter.next().unwrap());
         for mass in iter {
             tree = tree.add_mass(*mass);
         }
         tree.update_with(Point::ZERO);
         tree
+    }
+
+    pub fn mass_iter(&self) -> TreeIter {
+        TreeIter::new(&self.tree)
     }
 }
 
