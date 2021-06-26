@@ -14,6 +14,7 @@ pub mod joe;
 pub mod point;
 use point::*;
 use rand::Rng;
+use std::fmt::*;
 use std::iter::*;
 
 #[derive(Debug, Copy, Clone)]
@@ -37,7 +38,7 @@ pub trait SimFactory {
     fn new(&self, count: usize) -> Box<dyn Simulator>;
 }
 
-pub trait Simulator: std::fmt::Debug + Send + Sync {
+pub trait Simulator: Debug + Send + Sync {
     fn step(&mut self);
     fn mass_iter(&self) -> Box<dyn Iterator<Item = &Mass> + '_>;
 }
