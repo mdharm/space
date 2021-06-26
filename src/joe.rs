@@ -145,6 +145,10 @@ impl SimFactory for JoeFactory {
         }
         Box::new(JoeSimulator { tree })
     }
+
+    fn name(&self) -> String {
+        String::from("Joe's Simulator")
+    }
 }
 
 #[derive(Debug)]

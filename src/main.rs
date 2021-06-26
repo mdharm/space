@@ -34,7 +34,7 @@ pub fn main() {
             .expect("failed to initialize GTK application");
     application.connect_activate(move |app| {
         let window = ApplicationWindow::new(app);
-        window.set_title("Space Sim");
+        window.set_title(&("Space Sim: ".to_owned() + &factory.name()));
 
         const WIDTH: f64 = 400.0;
         const HEIGHT: f64 = 400.0;

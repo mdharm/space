@@ -36,6 +36,7 @@ impl Mass {
 
 pub trait SimFactory {
     fn new(&self, count: usize) -> Box<dyn Simulator>;
+    fn name(&self) -> String;
 }
 
 pub trait Simulator: Debug + Send + Sync {
