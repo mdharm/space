@@ -40,5 +40,5 @@ pub trait SimFactory {
 
 pub trait Simulator: Debug + Send + Sync {
     fn step(&mut self);
-    fn mass_iter(&self) -> Box<dyn Iterator<Item = &Mass> + '_>;
+    fn mass_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Mass> + 'a>;
 }
