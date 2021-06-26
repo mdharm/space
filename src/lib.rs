@@ -11,6 +11,7 @@ To build the tree, we need the center of mass of each cloud.
 
 */
 pub mod joe;
+pub mod matt;
 pub mod point;
 use point::*;
 use rand::Rng;
