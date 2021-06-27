@@ -67,8 +67,36 @@ impl SubAssign for Point {
 impl Sub for Point {
     type Output = Self;
 
-    fn sub(self, other: Self) -> Self {
+    fn sub(self, other: Self) -> Self::Output {
         self.minus(other)
+    }
+}
+
+impl MulAssign<Float> for Point {
+    fn mul_assign(&mut self, rhs: Float) {
+        *self = self.scale(rhs)
+    }
+}
+
+impl Mul<Float> for Point {
+    type Output = Self;
+
+    fn mul(self, rhs: Float) -> Self::Output {
+        self.scale(rhs)
+    }
+}
+
+impl DivAssign<Float> for Point {
+    fn div_assign(&mut self, rhs: Float) {
+        *self = self.scale(1.0 / rhs)
+    }
+}
+
+impl Div<Float> for Point {
+    type Output = Self;
+
+    fn div(self, rhs: Float) -> Self::Output {
+        self.scale(1.0 / rhs)
     }
 }
 
@@ -157,28 +185,42 @@ mod test {
 
     #[test]
     fn test_traits() {
+        let two = Point(2.0, 2.0);
         let one = Point(1.0, 1.0);
         let zero = Point(0.0, 0.0);
 
+        // operator +=
+        let mut result = zero;
+        result += one;
+        assert_eq!(result, one);
+        result += one;
+        assert_eq!(result, two);
+
         // operator +
         assert_eq!(one, one + zero);
-        assert_eq!(one, one + one - one);
+        assert_eq!(two, one + one);
         assert!(Point(4.0, 5.0) + Point(1.0, 2.0) == Point(5.0, 7.0));
 
-        // operator -
-        assert_eq!(one, one - zero);
-        assert_eq!(one, one + one - one);
-        assert!(Point(4.0, 5.0) - Point(1.0, 2.0) == Point(3.0, 3.0));
-
         // operator -=
-        let mut result = one;
+        result = two;
         result -= one;
-        assert_eq!(result, one - one);
+        assert_eq!(result, one);
+        result -= one;
         assert_eq!(result, zero);
 
-        // operator +=
+        // operator -
+        assert_eq!(zero, one - one);
+        assert_eq!(one, one - zero);
+        assert_eq!(one, two - one);
+        assert!(Point(4.0, 5.0) - Point(1.0, 2.0) == Point(3.0, 3.0));
+
+        // operator *=
         result = one;
-        result += one;
-        assert_eq!(result, one + one);
+        result *= 2.0;
+        assert_eq!(result, two);
+
+        // operator *
+        assert_eq!(two, one * 2.0);
+        assert_eq!(zero, one * 0.0);
     }
 }
