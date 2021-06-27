@@ -154,4 +154,31 @@ mod test {
         assert_def!(1.0, one.unit_vector().magnitude());
         assert_def!(one.unit_vector().0, one.unit_vector().1)
     }
+
+    #[test]
+    fn test_traits() {
+        let one = Point(1.0, 1.0);
+        let zero = Point(0.0, 0.0);
+
+        // operator +
+        assert_eq!(one, one + zero);
+        assert_eq!(one, one + one - one);
+        assert!(Point(4.0, 5.0) + Point(1.0, 2.0) == Point(5.0, 7.0));
+
+        // operator -
+        assert_eq!(one, one - zero);
+        assert_eq!(one, one + one - one);
+        assert!(Point(4.0, 5.0) - Point(1.0, 2.0) == Point(3.0, 3.0));
+
+        // operator -=
+        let mut result = one;
+        result -= one;
+        assert_eq!(result, one - one);
+        assert_eq!(result, zero);
+
+        // operator +=
+        result = one;
+        result += one;
+        assert_eq!(result, one + one);
+    }
 }
