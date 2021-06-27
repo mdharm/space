@@ -27,8 +27,7 @@ impl MattSimulator {}
 impl Simulator for MattSimulator {
     fn step(&mut self) {
         for x in self.masses.iter_mut() {
-            x.position = x.position.add(x.velocity);
-            //x.position += x.velocity;
+            x.position += x.velocity;
         }
     }
 

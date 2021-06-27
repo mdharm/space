@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::ops::AddAssign;
 
 pub type Float = f64;
 
@@ -40,6 +41,12 @@ impl Point {
     pub fn new_random() -> Point {
         let mut rng = rand::thread_rng();
         Point(rng.gen::<f64>() - 0.5, rng.gen::<f64>() - 0.5)
+    }
+}
+
+impl AddAssign for Point {
+    fn add_assign(&mut self, other: Self) {
+        *self = self.add(other);
     }
 }
 
