@@ -42,6 +42,7 @@ pub fn main() {
         std::thread::sleep(std::time::Duration::from_millis(1000));
         loop {
             if let Ok(ref mut s) = sim1.write() {
+                println!("simulation step");
                 s.step();
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
