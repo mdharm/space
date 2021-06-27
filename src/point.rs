@@ -1,5 +1,5 @@
 use rand::Rng;
-use std::ops::AddAssign;
+use std::ops::*;
 
 pub type Float = f64;
 
@@ -47,6 +47,28 @@ impl Point {
 impl AddAssign for Point {
     fn add_assign(&mut self, other: Self) {
         *self = self.add(other);
+    }
+}
+
+impl Add for Point {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        self.add(other)
+    }
+}
+
+impl SubAssign for Point {
+    fn sub_assign(&mut self, other: Self) {
+        *self = self.minus(other);
+    }
+}
+
+impl Sub for Point {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        self.minus(other)
     }
 }
 
