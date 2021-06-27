@@ -29,7 +29,7 @@ pub struct Mass {
 impl Mass {
     pub fn new_random() -> Mass {
         Mass {
-            position: Point::new_random(),
+            position: Point::new_random() * 100.0,
             velocity: Point::new_random(),
             mass: rand::thread_rng().gen::<Float>() / 1000.0,
         }
