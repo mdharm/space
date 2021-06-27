@@ -2,11 +2,29 @@ use space::joe::*;
 use space::matt::*;
 use space::*;
 
+fn select_factory() -> Box<dyn SimFactory> {
+    use std::env;
+
+    let default_sim_factory: Box<dyn SimFactory> = Box::new(MattFactory {});
+    let args: Vec<String> = env::args().collect();
+
+    // validate number of arguments with default behavior
+    if args.len() == 1 || args.len() > 2 {
+        return default_sim_factory;
+    }
+
+    match args[1].parse::<i32>() {
+        Ok(1) => Box::new(JoeFactory {}),
+        Ok(2) => Box::new(MattFactory {}),
+        Ok(_) | Err(_) => default_sim_factory,
+    }
+}
+
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
-    let factory: Box<dyn SimFactory> = Box::new(JoeFactory {});
+    let factory = select_factory();
     let sim: Box<dyn Simulator> = factory.new(10);
-    print!("{:#?}", sim);
+    println!("{:#?}", sim);
 }
 
 #[cfg(feature = "use_gtk")]
@@ -17,7 +35,7 @@ pub fn main() {
     use std::cell::*;
     use std::sync::*;
 
-    let factory: std::boxed::Box<dyn SimFactory> = std::boxed::Box::new(JoeFactory {});
+    let factory = select_factory();
     let sim = Arc::new(RwLock::new(factory.new(5000)));
     let sim1 = sim.clone();
     std::thread::spawn(move || {
