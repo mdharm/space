@@ -6,7 +6,7 @@ pub struct NoGravityFactory;
 impl SimFactory for NoGravityFactory {
     fn new(&self, count: usize) -> Box<dyn Simulator> {
         let mut masses: Vec<Mass> = Vec::new();
-        for _i in 1..count {
+        for _i in 0..count {
             masses.push(Mass::new_random());
         }
         Box::new(NoGravitySimulator { masses })
