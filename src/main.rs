@@ -25,8 +25,13 @@ fn select_factory() -> Box<dyn SimFactory> {
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
     let factory = select_factory();
-    let sim: Box<dyn Simulator> = factory.new(10);
+    let mut sim: Box<dyn Simulator> = factory.new(10);
     println!("{:#?}", sim);
+    for _x in 0..10 {
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+        sim.step();
+        println!("{:#?}", sim);
+    }
 }
 
 #[cfg(feature = "use_gtk")]
