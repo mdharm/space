@@ -1,5 +1,6 @@
 use space::joe::*;
 use space::matt::*;
+use space::no_gravity::*;
 use space::*;
 
 fn select_factory() -> Box<dyn SimFactory> {
@@ -16,6 +17,7 @@ fn select_factory() -> Box<dyn SimFactory> {
     match args[1].parse::<i32>() {
         Ok(1) => Box::new(JoeFactory {}),
         Ok(2) => Box::new(MattFactory {}),
+        Ok(3) => Box::new(NoGravityFactory {}),
         Ok(_) | Err(_) => default_sim_factory,
     }
 }
