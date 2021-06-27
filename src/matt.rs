@@ -41,30 +41,26 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_update_with() {
+    fn test_step() {
         let test_mass = Mass {
             position: Point::ZERO,
             velocity: Point(1.0, 1.0),
             mass: 1.0,
         };
-        let mut test_node = Tree::Leaf(test_mass);
+        let mut sim = MattSimulator {
+            masses: vec![test_mass],
+        };
 
-        test_node.update_with(Point::ZERO);
+        sim.step();
+        assert!((sim.masses[0].position - Point(1.0, 1.0)).magnitude_squared() < Point::EPSILON);
+        assert!(sim.masses[0].position == Point(1.0, 1.0));
 
-        if let Leaf(ref x) = test_node {
-            assert!(x.position.minus(Point(1.0, 1.0)).magnitude_squared() < Point::EPSILON);
-            assert!(x.position == Point(1.0, 1.0));
-        } else {
-            panic!("Not a Leaf() when that is the only choice!!");
-        }
+        sim.step();
+        assert!((sim.masses[0].position - Point(2.0, 2.0)).magnitude_squared() < Point::EPSILON);
+        assert!(sim.masses[0].position == Point(2.0, 2.0));
 
-        test_node.update_with(Point(2.0, 3.0));
-
-        if let Leaf(ref x) = test_node {
-            assert!(x.position.minus(Point(4.0, 5.0)).magnitude_squared() < Point::EPSILON);
-            assert!(x.position == Point(4.0, 5.0));
-        } else {
-            panic!("Not a Leaf() when that is the only choice!!");
-        }
+        sim.step();
+        assert!((sim.masses[0].position - Point(3.0, 3.0)).magnitude_squared() < Point::EPSILON);
+        assert!(sim.masses[0].position == Point(3.0, 3.0));
     }
 }
