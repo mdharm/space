@@ -43,13 +43,13 @@ pub fn main() {
     use std::sync::*;
 
     let factory = select_factory();
-    let sim = Arc::new(RwLock::new(factory.new(5000)));
+    let sim = Arc::new(RwLock::new(factory.new(10)));
     let sim1 = sim.clone();
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(1000));
         loop {
             if let Ok(ref mut s) = sim1.write() {
-                println!("simulation step");
+                //println!("simulation step");
                 s.step();
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
@@ -86,7 +86,7 @@ pub fn main() {
                     cairo.rectangle(x, y, size, size);
                 }
                 max_max.replace(max);
-                println!("draw max: {}", max);
+                //println!("draw max: {}", max);
             }
             cairo.fill();
             gtk::Inhibit(false)
