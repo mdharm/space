@@ -80,6 +80,8 @@ pub fn main() {
                 let mut max = *max_max.borrow_mut();
                 for m in i.iter() {
                     max = max.max(m.position.0.abs()).max(m.position.1.abs());
+                }
+                for m in i.iter() {
                     let x = (m.position.0 * width * 0.95 / max / 2.0) + (width / 2.0);
                     let y = (m.position.1 * height * 0.95 / max / 2.0) + (height / 2.0);
                     let size = m.mass * 10.0;
