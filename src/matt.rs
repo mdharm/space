@@ -12,7 +12,7 @@ impl SimFactory for MattFactory {
             let tmp = Mass::new_random();
             cm_numerator += tmp.position * tmp.mass;
             cm_denominator += tmp.mass;
-            masses.push(Mass::new_random());
+            masses.push(tmp);
         }
         Box::new(MattSimulator {
             masses,
