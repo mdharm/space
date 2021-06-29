@@ -71,13 +71,13 @@ pub fn main() {
         let area = DrawingArea::new();
 
         let sim2 = sim.clone();
-        let max_max: RefCell<f64> = RefCell::new(0.0);
+        let max_max: std::boxed::Box<f64> = std::boxed::Box::<f64>::new(0.0);
         area.connect_draw(move |window, cairo| {
             let width = window.get_allocated_width() as f64;
             let height = window.get_allocated_height() as f64;
             if let Ok(s) = sim2.read() {
                 let i: Vec<&Mass> = s.mass_iter().collect();
-                let mut max = *max_max.borrow_mut();
+                let mut max = *max_max;
                 for m in i.iter() {
                     max = max.max(m.position.0.abs()).max(m.position.1.abs());
                 }
@@ -87,7 +87,6 @@ pub fn main() {
                     let size = m.mass * 10.0;
                     cairo.rectangle(x, y, size, size);
                 }
-                max_max.replace(max);
                 //println!("draw max: {}", max);
             }
             cairo.fill();
