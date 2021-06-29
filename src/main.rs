@@ -39,7 +39,6 @@ pub fn main() {
     use gio::prelude::*;
     use gtk::prelude::*;
     use gtk::*;
-    use std::cell::*;
     use std::sync::*;
 
     let factory = select_factory();
