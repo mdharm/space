@@ -39,6 +39,8 @@ pub fn main() {
     use gio::prelude::*;
     use gtk::prelude::*;
     use gtk::*;
+    use palette::{Gradient, Hsv, LinSrgb};
+    use std::cell::RefCell;
     use std::sync::*;
 
     let factory = select_factory();
@@ -69,26 +71,38 @@ pub fn main() {
         let frame = gtk::Frame::new(None);
         let area = DrawingArea::new();
 
+        let grad = Gradient::new(vec![
+            Hsv::from(LinSrgb::new(1.0, 0.0, 0.0)),
+            Hsv::from(LinSrgb::new(0.0, 1.0, 0.0)),
+        ]);
+
         let sim2 = sim.clone();
-        let max_max: std::boxed::Box<f64> = std::boxed::Box::<f64>::new(0.0);
+        let max_values = RefCell::<(f64, f64)>::new((0.0, 0.0));
         area.connect_draw(move |window, cairo| {
             let width = window.get_allocated_width() as f64;
             let height = window.get_allocated_height() as f64;
             if let Ok(s) = sim2.read() {
                 let i: Vec<&Mass> = s.mass_iter().collect();
-                let mut max = *max_max;
+                let (mut size, mut speed) = *max_values.borrow_mut();
+                println!("draw max size: {}, max speed: {}", size, speed);
+
                 for m in i.iter() {
-                    max = max.max(m.position.0.abs()).max(m.position.1.abs());
+                    size = size.max(m.position.0.abs()).max(m.position.1.abs());
+                    speed = speed.max(m.velocity.magnitude());
                 }
                 for m in i.iter() {
-                    let x = (m.position.0 * width * 0.95 / max / 2.0) + (width / 2.0);
-                    let y = (m.position.1 * height * 0.95 / max / 2.0) + (height / 2.0);
+                    let x = (m.position.0 * width * 0.95 / size / 2.0) + (width / 2.0);
+                    let y = (m.position.1 * height * 0.95 / size / 2.0) + (height / 2.0);
                     let size = m.mass * 10.0;
+                    let color: LinSrgb<f64> = grad.get(m.velocity.magnitude() / speed).into();
+
+                    cairo.set_source_rgb(color.red, color.green, color.blue);
                     cairo.rectangle(x, y, size, size);
+                    cairo.fill();
                 }
-                //println!("draw max: {}", max);
+                max_values.replace((size, speed));
+                //println!("draw max size: {}, max speed: {}", size, speed);
             }
-            cairo.fill();
             gtk::Inhibit(false)
         });
         frame.add(&area);
