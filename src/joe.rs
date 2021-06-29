@@ -140,7 +140,7 @@ pub struct JoeFactory;
 impl SimFactory for JoeFactory {
     fn new(&self, count: usize) -> Box<dyn Simulator> {
         let mut tree = Leaf(Mass::new_random());
-        for _i in 0..count {
+        for _i in 1..count {
             tree = tree.add_mass(Mass::new_random());
         }
         Box::new(JoeSimulator { tree })
