@@ -40,7 +40,7 @@ pub fn main() {
     use gtk::prelude::*;
     use gtk::*;
     use palette::{Gradient, Hsv, LinSrgb};
-    use std::cell::RefCell;
+    use std::cell::Cell;
     use std::sync::*;
 
     let factory = select_factory();
@@ -77,13 +77,13 @@ pub fn main() {
         ]);
 
         let sim2 = sim.clone();
-        let max_values = RefCell::<(f64, f64)>::new((0.0, 0.0));
+        let max_values = Cell::<(f64, f64)>::new((0.0, 0.0));
         area.connect_draw(move |window, cairo| {
             let width = window.get_allocated_width() as f64;
             let height = window.get_allocated_height() as f64;
             if let Ok(s) = sim2.read() {
                 let i: Vec<&Mass> = s.mass_iter().collect();
-                let (mut size, mut speed) = *max_values.borrow_mut();
+                let (mut size, mut speed) = max_values.get();
                 println!("draw max size: {}, max speed: {}", size, speed);
 
                 for m in i.iter() {
@@ -100,7 +100,7 @@ pub fn main() {
                     cairo.rectangle(x, y, size, size);
                     cairo.fill();
                 }
-                max_values.replace((size, speed));
+                max_values.set((size, speed));
                 //println!("draw max size: {}, max speed: {}", size, speed);
             }
             gtk::Inhibit(false)
