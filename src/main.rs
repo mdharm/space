@@ -25,7 +25,7 @@ fn select_factory() -> Box<dyn SimFactory> {
 #[cfg(not(feature = "use_gtk"))]
 pub fn main() {
     let factory = select_factory();
-    let mut sim: Box<dyn Simulator> = factory.new(10);
+    let mut sim: Box<dyn Simulator> = factory.new(3);
     println!("{:#?}", sim);
     for _x in 0..10 {
         std::thread::sleep(std::time::Duration::from_millis(1000));
@@ -44,7 +44,7 @@ pub fn main() {
     use std::sync::*;
 
     let factory = select_factory();
-    let sim = Arc::new(RwLock::new(factory.new(10)));
+    let sim = Arc::new(RwLock::new(factory.new(3)));
     let sim1 = sim.clone();
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(1000));
