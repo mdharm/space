@@ -65,7 +65,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_step() {
+    fn test_velocity() {
         let test_mass = Mass {
             position: Point::ZERO,
             velocity: Point(1.0, 1.0),
@@ -73,18 +73,50 @@ mod test {
         };
         let mut sim = MattSimulator {
             masses: vec![test_mass],
+            cm_numerator: test_mass.position * test_mass.mass,
+            cm_denominator: test_mass.mass,
         };
 
         sim.step();
         assert!((sim.masses[0].position - Point(1.0, 1.0)).magnitude_squared() < Point::EPSILON);
         assert!(sim.masses[0].position == Point(1.0, 1.0));
+    }
+
+    #[test]
+    fn test_gravity_vector() {
+        // two masses, on either side of the coordinate origin
+        let test_mass1 = Mass {
+            position: Point(-1.0, 0.0),
+            velocity: Point::ZERO,
+            mass: 1.0,
+        };
+        let test_mass2 = Mass {
+            position: Point(1.0, 0.0),
+            ..test_mass1
+        };
+        let mut sim = MattSimulator {
+            masses: vec![test_mass1, test_mass2],
+            cm_numerator: (test_mass1.position * test_mass1.mass)
+                + (test_mass2.position * test_mass2.mass),
+            cm_denominator: test_mass1.mass + test_mass2.mass,
+        };
 
         sim.step();
-        assert!((sim.masses[0].position - Point(2.0, 2.0)).magnitude_squared() < Point::EPSILON);
-        assert!(sim.masses[0].position == Point(2.0, 2.0));
+
+        // masses should be moving towards each other
+        assert!(sim.masses[0].velocity.0 > 0.0);
+        assert!(sim.masses[0].velocity.1 == 0.0);
+        assert!(sim.masses[1].velocity.0 < 0.0);
+        assert!(sim.masses[1].velocity.1 == 0.0);
+
+        // travel should be along the axis
+        assert!(sim.masses[0].position.1 == 0.0);
+        assert!(sim.masses[1].position.1 == 0.0);
 
         sim.step();
-        assert!((sim.masses[0].position - Point(3.0, 3.0)).magnitude_squared() < Point::EPSILON);
-        assert!(sim.masses[0].position == Point(3.0, 3.0));
+
+        // travel should be along the axis
+        assert!(sim.masses[0].position.1 == 0.0);
+        assert!(sim.masses[1].position.1 == 0.0);
     }
 }
