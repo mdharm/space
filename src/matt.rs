@@ -37,6 +37,7 @@ impl MattSimulator {}
 
 impl Simulator for MattSimulator {
     fn step(&mut self) {
+        // update each mass
         for x in self.masses.iter_mut() {
             // update position based on current velocity
             x.position += x.velocity;
@@ -45,13 +46,21 @@ impl Simulator for MattSimulator {
             // center of mass updated to exclude this particular mass
             let cm = (self.cm_numerator - (x.position * x.mass)) / (self.cm_denominator - x.mass);
 
-            // force felt by this mass = this_mass * other_mass / distance**2
+            // magnitude of force felt by this mass = this_mass * other_mass / distance**2
             let force =
                 (x.mass * (self.cm_denominator - x.mass)) / (x.position - cm).magnitude_squared();
 
             // acceleration (change in velocity) is force / mass along the vector between the mass
             // and the center of mass of the cloud
-            x.velocity += (cm - x.position) * (force / x.mass);
+            x.velocity += (cm - x.position).unit_vector() * (force / x.mass);
+        }
+
+        // update the center of mass of the collection
+        self.cm_numerator = Point::ZERO;
+        self.cm_denominator = 0.0;
+        for x in self.masses.iter() {
+            self.cm_numerator += x.position * x.mass;
+            self.cm_denominator += x.mass;
         }
     }
 
