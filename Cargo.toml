@@ -19,10 +19,10 @@ features = ["v3_16"]
 optional = true
 
 [dependencies.glib]
-version = ""
+version = "0.10.3"
 optional = true
 
 [dependencies.gio]
-version = ""
+version = "0.9.1"
 features = ["v2_44"]
 optional = true
